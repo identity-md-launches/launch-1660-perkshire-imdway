@@ -1,0 +1,32 @@
+{
+  "kind": "univ4_hook",
+  "hook": {
+    "contract": "PerkVaultHook",
+    "constructorArgs": [
+      "$poolManager",
+      "$token",
+      "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+      "$factory"
+    ],
+    "permissions": [
+      "beforeInitialize",
+      "beforeSwap",
+      "afterSwap",
+      "beforeSwapReturnDelta",
+      "afterSwapReturnDelta"
+    ]
+  },
+  "token": {
+    "contract": "PerkToken",
+    "name": "Perkshire IMDway",
+    "symbol": "PERK",
+    "decimals": 18
+  },
+  "pool": {
+    "pairedCurrency": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+    "fee": 12500,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336"
+  },
+  "notes": "PerkVaultHook is the PERK/IMD Uniswap v4 hook and Retained Earnings Vault on Robinhood Chain (4663). Its PoolManager-only beforeInitialize binds exactly one pool initialized by the immutable factory, with the immutable PERK and IMD currencies and static LP fee 12500; it does not hard-code tick spacing. The hook collects a 1% IMD fee in both directions and both exact-input and exact-output modes using the RnnnFeeHook simulation and return-delta mechanism, on top of the 1.25% LP fee. Each fee is accounted once: half rounded down becomes burnOwed, and the remainder becomes totalFloat. Fees that cannot be transferred remain ERC-6909 claims held by the hook, reported by pendingFloat and redeemable through permissionless redeemPendingFees. Burn attempts send available IMD up to burnOwed to the dead address; refused transfers remain owed. Holders may tender PERK to the dead address for a rounded-down pro-rata payout from the hook's IMD balance less burnOwed, using circulating PERK before the tender as the denominator. Unredeemed claims do not back payouts; zero payouts revert. Anyone may call ask, first at any time and then at least seven days apart, with at least 0.6 IMD available after burn reserves. It pays 0.5 IMD to Intake 0xa43e6f75ee006411f79ac1c84120606c2330de82 for oracle.request@oracle-1 using the fixed weekly IMD-burn question, pays the caller 0.1 IMD, requests no callback and clears remaining allowance. IMD exits only through burn, tender and ask. Both contracts have no owner, admin or upgrade path. PerkToken is a plain ERC-20 with no constructor arguments or post-deployment minting. The recorded initialPrice is the launch reference value; the deployer derives the opening price from launch policy. This deliverable covers the hook and token only. Parody only: not affiliated with Berkshire Hathaway, Warren Buffett or Charlie Munger; PERK is not a share or equity in any company and promises no yield."
+}
