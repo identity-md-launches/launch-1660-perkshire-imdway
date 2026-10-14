@@ -21,6 +21,7 @@ import {HookFlags} from "../src/HookFlags.sol";
 import {HookDeployer} from "./utils/HookDeployer.sol";
 import {PerkVaultBase} from "./utils/PerkVaultBase.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {ForcedDeferral} from "./mocks/ForcedDeferral.sol";
 
 contract PerkVaultHookTest is PerkVaultBase {
     using PoolIdLibrary for PoolKey;
@@ -596,6 +597,222 @@ contract PerkVaultHookTest is PerkVaultBase {
     function test_redeemPendingFeesRevertsWhenNothingIsPending() public {
         vm.expectRevert(PerkVaultHook.NothingToRedeem.selector);
         hook.redeemPendingFees();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // A deferred fee's burn half waits for its claim: it is never paid out of the float on hand
+    // ---------------------------------------------------------------------------------------------
+
+    /// @dev Float on hand (here a donation; float from earlier paid fees behaves the same), then a
+    /// buy whose fee the manager cannot pay. The burn half is owed but deferred, nothing reaches
+    /// 0x…dEaD yet, and book value, the tender quote and the float do not move.
+    function test_deferredFeeDoesNotSpendTheFloatOnHand() public {
+        _addPerkOnlyLiquidity(1e24);
+        imd.transfer(address(hook), 10 ether);
+        uint256 bvBefore = hook.bookValuePerPerk();
+        assertEq(bvBefore, 10 ether * 1e18 / perk.totalSupply());
+        uint256 quoteBefore = hook.quoteTender(1e24);
+        assertEq(quoteBefore, 0.01 ether);
+
+        _buyExactIn(100 ether);
+
+        assertEq(hook.pendingFloat(), 1 ether, "fee deferred");
+        assertEq(hook.burnOwed(), 0.5 ether, "burn half owed");
+        assertEq(hook.deferredBurn(), 0.5 ether, "burn half waits for the claim");
+        assertEq(hook.burnDue(), 0);
+        assertEq(hook.totalBurned(), 0);
+        assertEq(imd.balanceOf(DEAD), 0, "the float on hand was burned");
+        assertEq(imd.balanceOf(address(hook)), 10 ether);
+        assertEq(hook.floatBalance(), 10 ether);
+        assertEq(hook.bookValuePerPerk(), bvBefore, "a deferred fee moved book value");
+        assertEq(hook.quoteTender(1e24), quoteBefore, "a deferred fee moved the tender quote");
+
+        // An explicit burn() in the window burns nothing either.
+        assertEq(hook.burn(), 0);
+        assertEq(imd.balanceOf(DEAD), 0);
+
+        // Once redeemed, the burn half is paid from the redeemed fee and the float grows by the rest.
+        vm.expectEmit(false, false, false, true, address(hook));
+        emit PerkVaultHook.Burned(0.5 ether);
+        hook.redeemPendingFees();
+        assertEq(hook.pendingFloat(), 0);
+        assertEq(hook.deferredBurn(), 0);
+        assertEq(hook.burnOwed(), 0);
+        assertEq(hook.totalBurned(), 0.5 ether);
+        assertEq(imd.balanceOf(DEAD), 0.5 ether);
+        assertEq(imd.balanceOf(address(hook)), 10.5 ether);
+        assertGt(hook.bookValuePerPerk(), bvBefore);
+        _assertImdConserved();
+    }
+
+    /// @dev A tender and an ask inside the deferral window are paid at the real book value.
+    function test_tenderAndAskInsideTheDeferralWindowUseTheWholeFloat() public {
+        _addPerkOnlyLiquidity(1e24);
+        imd.transfer(address(hook), 10 ether);
+        _buyExactIn(100 ether);
+        assertEq(hook.pendingFloat(), 1 ether, "setup: fee deferred");
+
+        uint256 payout = hook.tender(1e24);
+        assertEq(payout, 0.01 ether, "tender underpaid in the deferral window");
+
+        vm.warp(1_800_000_000);
+        bytes32 id = hook.ask();
+        assertTrue(id != bytes32(0));
+        assertEq(imd.balanceOf(address(intake)), 0.5 ether);
+        assertEq(hook.deferredBurn(), 0.5 ether, "the deferred burn half is still waiting");
+        assertEq(imd.balanceOf(DEAD), 0, "nothing burned before the claim is redeemed");
+        _assertImdConserved();
+    }
+
+    /// @dev Any swapper can force a deferral by emptying the manager's IMD inside its own unlock
+    /// before it swaps. The float on hand must survive that untouched: tenders and asks keep
+    /// working, and nothing is burned until the claim is redeemed.
+    function test_forcedDeferralCannotLowerBookValueOrBlockTendersAndAsks() public {
+        _addFullRangeLiquidity(1e24);
+        _buyExactIn(1_000 ether); // paid: 5 IMD burned, 5 IMD float
+        assertEq(imd.balanceOf(address(hook)), 5 ether);
+        uint256 bvBefore = hook.bookValuePerPerk();
+        assertGt(bvBefore, 0);
+        uint256 deadBefore = imd.balanceOf(DEAD);
+
+        ForcedDeferral attacker = new ForcedDeferral(manager);
+        imd.transfer(address(attacker), 2_000 ether);
+        bool zeroForOne = !perkIsZero;
+        attacker.run(
+            key, Currency.wrap(address(imd)), Currency.wrap(address(perk)), zeroForOne, -1_000 ether, _limit(zeroForOne)
+        );
+
+        assertEq(hook.pendingFloat(), 10 ether, "the attacker forced a deferral");
+        assertEq(hook.deferredBurn(), 5 ether);
+        assertEq(hook.burnOwed(), 5 ether);
+        assertEq(imd.balanceOf(address(hook)), 5 ether, "float on hand changed");
+        assertEq(imd.balanceOf(DEAD), deadBefore, "float on hand was burned");
+        assertEq(hook.floatBalance(), 5 ether);
+        assertEq(hook.bookValuePerPerk(), bvBefore, "a forced deferral moved book value");
+
+        // Tenders and asks in the window work on the whole float.
+        uint256 circulating = perk.totalSupply() - perk.balanceOf(DEAD);
+        uint256 payout = hook.tender(1e24);
+        assertEq(payout, 1e24 * 5 ether / circulating);
+        vm.warp(1_800_000_000);
+        hook.ask();
+        assertEq(hook.totalAsked(), 1);
+
+        // The claim is redeemed later; half of the deferred fee is burned, once.
+        hook.redeemPendingFees();
+        assertEq(hook.pendingFloat(), 0);
+        assertEq(hook.deferredBurn(), 0);
+        assertEq(hook.burnOwed(), 0);
+        assertEq(imd.balanceOf(DEAD) - deadBefore, 5 ether);
+        assertEq(hook.totalBurned(), 10 ether);
+        address[] memory others = new address[](1);
+        others[0] = address(attacker);
+        _assertImdConserved(others);
+    }
+
+    /// @dev The natural sequence on the launch pool: a deferred buy, a paid buy that flushes it,
+    /// then a buy whose fee exceeds what the manager holds. The float from the paid fee stays whole
+    /// and an ask succeeds inside the window.
+    function test_largeDeferredBuyAfterPaidFeesLeavesTheFloatWhole() public {
+        _addPerkOnlyLiquidity(1e24);
+        _buyExactIn(100 ether); // deferred: fee 1
+        _buyExactIn(50 ether); // paid, flushes the pending 1: float 0.75, burned 0.75
+        assertEq(hook.pendingFloat(), 0);
+        assertEq(hook.floatBalance(), 0.75 ether);
+        uint256 bvBefore = hook.bookValuePerPerk();
+
+        _buyExactIn(20_000 ether); // fee 200 > manager's IMD: deferred
+        assertEq(hook.pendingFloat(), 200 ether, "setup: large fee deferred");
+        assertEq(hook.deferredBurn(), 100 ether);
+        assertEq(hook.floatBalance(), 0.75 ether, "float on hand was burned");
+        assertEq(hook.bookValuePerPerk(), bvBefore);
+
+        vm.warp(1_800_000_000);
+        hook.ask();
+        assertEq(hook.totalAsked(), 1);
+        assertEq(hook.floatBalance(), 0.15 ether);
+    }
+
+    /// @dev A partial redemption pays the burn first out of what was redeemed and never leaves more
+    /// deferred than is still pending or owed. Outside an open unlock the PoolManager always holds
+    /// at least its claims, so the shortfall is forced here by moving IMD out of the manager as if
+    /// the token had lost balance; the branch is defensive.
+    function test_partialRedemptionReleasesTheBurnFirstAndKeepsTheInvariants() public {
+        _addPerkOnlyLiquidity(1e24);
+        imd.transfer(address(hook), 10 ether);
+        _buyExactIn(100 ether); // deferred: fee 1, manager holds 100 IMD
+        assertEq(hook.pendingFloat(), 1 ether);
+        vm.prank(address(manager));
+        imd.transfer(stranger, 99.7 ether);
+        assertEq(imd.balanceOf(address(manager)), 0.3 ether, "setup: manager covers 0.3 of the pending 1");
+        assertEq(hook.deferredBurn(), 0.5 ether);
+        uint256 floatBefore = hook.floatBalance();
+        assertEq(floatBefore, 10 ether);
+
+        uint256 redeemed = hook.redeemPendingFees();
+
+        assertEq(redeemed, 0.3 ether);
+        assertEq(hook.pendingFloat(), 0.7 ether);
+        assertEq(hook.deferredBurn(), 0.2 ether, "the redeemed 0.3 went to the burn first");
+        assertEq(imd.balanceOf(DEAD), 0.3 ether);
+        assertEq(hook.burnOwed(), 0.2 ether);
+        assertEq(hook.burnDue(), 0);
+        assertLe(hook.deferredBurn(), hook.pendingFloat(), "more deferred than pending");
+        assertLe(hook.deferredBurn(), hook.burnOwed(), "more deferred than owed");
+        assertEq(hook.floatBalance(), floatBefore, "a partial redemption moved the float");
+
+        // The manager gets its IMD back; the rest redeems in full and the totals close.
+        vm.prank(stranger);
+        imd.transfer(address(manager), 99.7 ether);
+        assertEq(hook.redeemPendingFees(), 0.7 ether);
+        assertEq(hook.pendingFloat(), 0);
+        assertEq(hook.deferredBurn(), 0);
+        assertEq(hook.burnOwed(), 0);
+        assertEq(imd.balanceOf(DEAD), 0.5 ether);
+        assertEq(hook.totalBurned(), 0.5 ether);
+        assertEq(hook.floatBalance(), 10.5 ether);
+        _assertImdConserved();
+    }
+
+    /// @dev Across random swaps, donations, redeems, burns, tenders and asks the deferred part of
+    /// the burn never exceeds what is owed or what is pending, and a swap never lowers book value.
+    function testFuzz_swapsNeverLowerBookValueAndDeferredBurnStaysBounded(uint8[12] memory actions, uint256 seed)
+        public
+    {
+        _addPerkOnlyLiquidity(1e24);
+        vm.warp(1_800_000_000);
+        for (uint256 i = 0; i < actions.length; i++) {
+            uint256 a = actions[i] % 8;
+            uint256 x = uint256(keccak256(abi.encode(seed, i)));
+            uint256 bvBefore = hook.bookValuePerPerk();
+            if (a == 0) {
+                _trySwap(!perkIsZero, -int256(bound(x, 100, 1e22)));
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a buy lowered book value");
+            } else if (a == 1) {
+                _trySwap(!perkIsZero, int256(bound(x, 100, 1e20)));
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a buy lowered book value");
+            } else if (a == 2) {
+                _trySwap(perkIsZero, -int256(bound(x, 100, perk.balanceOf(address(this)) / 4 + 100)));
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a sell lowered book value");
+            } else if (a == 3) {
+                _trySwap(perkIsZero, int256(bound(x, 100, 1e20)));
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a sell lowered book value");
+            } else if (a == 4) {
+                try hook.tender(bound(x, 1, perk.balanceOf(address(this)))) {} catch {}
+            } else if (a == 5) {
+                try hook.redeemPendingFees() {} catch {}
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a redeem lowered book value");
+            } else if (a == 6) {
+                hook.burn();
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a burn lowered book value");
+            } else {
+                imd.transfer(address(hook), bound(x, 0, 1e18));
+                assertGe(hook.bookValuePerPerk(), bvBefore, "a donation lowered book value");
+            }
+            assertLe(hook.deferredBurn(), hook.burnOwed(), "deferred exceeds owed");
+            assertLe(hook.deferredBurn(), hook.pendingFloat(), "deferred exceeds pending");
+            assertEq(hook.burnDue(), hook.burnOwed() - hook.deferredBurn());
+        }
     }
 
     /// @dev Over a mixed sequence of paid and deferred fees, exactly half of every fee (rounded

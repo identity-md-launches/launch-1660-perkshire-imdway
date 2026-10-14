@@ -68,7 +68,22 @@ ERC-6909 claim on IMD for the fee. `pendingFloat()` is the deferred amount. The 
 enough IMD in the manager flushes pending claims to the hook, and anyone may call
 `redeemPendingFees()` at any time. Pending claims do not back tenders until redeemed.
 
-**Burn.** `_burn()` sends `min(burnOwed, hook's IMD balance)` to
+A deferred fee's burn half is recorded twice over: in `burnOwed`, like every burn half, and in
+`deferredBurn`, which says how much of `burnOwed` is still waiting for its claim. The burn never
+pays that part out of IMD the hook already holds: it is paid when the claim is redeemed (by
+`redeemPendingFees()` or by the next swap's flush), out of the redeemed IMD first. So a deferred
+fee, whether it happens on the launch pool's first buys or is forced by a swapper that empties the
+manager's IMD inside its own unlock before swapping, leaves the float on hand, `bookValuePerPerk`,
+`quoteTender`, tenders and asks exactly where they were, and only raises them once redeemed.
+`burnDue()` is `burnOwed - deferredBurn`, the part the burn can take now.
+
+`pendingFloat()` reads the hook's ERC-6909 IMD balance. Anyone who pays IMD into the manager inside
+an unlock can mint such a claim to the hook; it shows in `pendingFloat()`, is redeemed like a fee,
+and reaches the float with `totalFloat`, `burnOwed` and `totalBurned` unchanged: it is a donation
+and can only raise book value (`deferredBurn` is released against it first, which burns no more
+than was already owed). Only in that case does `pendingFloat()` exceed the deferred fees.
+
+**Burn.** `_burn()` sends `min(burnOwed - deferredBurn, hook's IMD balance)` to
 `0x000000000000000000000000000000000000dEaD`, lowers `burnOwed`, raises `totalBurned` and emits
 `Burned`. It runs after every fee that reaches the hook, after every redeem, at the start of every
 tender and ask, and whenever anyone calls `burn()`. If IMD refuses the transfer (the live IMD has an
@@ -79,8 +94,10 @@ admin blocklist), the amount stays owed and nothing reverts; the next trigger re
 `tender(amount)`:
 
 1. runs the burn;
-2. computes `payout = amount * (hook's IMD balance - burnOwed) / (totalSupply - PERK held by dEaD)`,
-   rounded down, with the dead balance read before this tender;
+2. computes `payout = amount * (hook's IMD balance - burnDue) / (totalSupply - PERK held by dEaD)`,
+   rounded down, with the dead balance read before this tender, where `burnDue` is `burnOwed`
+   less the burn halves of fees still pending as claims (those are paid from the claims, not from
+   the balance);
 3. reverts with `ZeroPayout` if that is zero (no float yet, a dust amount, or `amount == 0`);
 4. moves `amount` PERK from the caller to 0x…dEaD (`transferFrom(msg.sender, dEaD, amount)`: the
    caller needs an allowance to the hook), adds it to `totalTendered`;
@@ -97,7 +114,7 @@ supply the book value is computed over). A reentrancy guard covers `tender`, `as
 
 - reverts with `AskTooSoon` if fewer than 7 days (`ASK_INTERVAL`) have passed since `lastAsk`; the
   first ask may happen at any time;
-- runs the burn, then requires the float (balance less `burnOwed`) to be at least 0.6 IMD
+- runs the burn, then requires the float (balance less `burnDue`) to be at least 0.6 IMD
   (`ASK_MINIMUM`), else `FloatTooSmall`;
 - approves exactly 0.5 IMD (`ASK_PRICE`) to the Intake `0xa43e6F75ee006411F79Ac1C84120606C2330DE82`
   and calls `request(bytes32("oracle.request@oracle-1"), BODY, Callback(address(0), bytes4(0)),
@@ -111,9 +128,12 @@ answer (how much IMD reached 0x…dEaD in the past 168 hours) is read from the o
 `0x0e84c095ed9c231763b35dc8959f58978742666369a6f19d78d0bbff1acb307b` (402 bytes), asserted in tests.
 
 The `oracle-consumer` reference asks for the intake, action and price to be owner-settable. This
-launch has no owner by the requester's rule, and the brief fixes all three, so they are constants.
-If the Intake moves or the price changes, `ask()` stops working (the Intake reverts and nothing is
-spent); the rest of the vault is unaffected. See "Operational responsibilities".
+launch has no owner by the requester's rule, and the brief fixes all three ("approve exactly 0.5
+IMD to the Intake ... and call request(..., imd, 0.5 IMD)"), so they are constants and the hook
+does not read `priceOf` from the Intake. If the Intake moves or the price changes, `ask()` stops
+working for good (the Intake reverts and nothing is spent; `lastAsk` and `totalAsked` do not move);
+the rest of the vault is unaffected. This is a trust assumption the requester chose, recorded here
+knowingly. See "Operational responsibilities".
 
 ### 5. Where IMD can go, and the views
 
@@ -121,9 +141,10 @@ IMD leaves the hook only by a tender payout, the burn (to 0x…dEaD) and an ask 
 0.1 to the caller). There is no withdraw, sweep, rescue or owner path, no `receive` and no fallback.
 
 Views: `perk`, `imd`, `factory`, `poolManager`, `boundPool`, `totalFloat`, `pendingFloat`,
-`burnOwed`, `totalBurned`, `lastAsk`, `totalAsked`, `totalTendered`, `bookValuePerPerk` (IMD per
-PERK, 18 decimals: `(balance - burnOwed) * 1e18 / (totalSupply - dead)`), plus `floatBalance`,
-`circulatingSupply`, `quoteTender(amount)` and `feeFor(imdAmount)`.
+`burnOwed`, `deferredBurn`, `burnDue`, `totalBurned`, `lastAsk`, `totalAsked`, `totalTendered`,
+`bookValuePerPerk` (IMD per PERK, 18 decimals: `(balance - burnDue) * 1e18 / (totalSupply - dead)`,
+where `burnDue = burnOwed - deferredBurn`), plus `floatBalance`, `circulatingSupply`,
+`quoteTender(amount)` and `feeFor(imdAmount)`.
 
 Book value starts at zero, rises only from the float (fees and any IMD donated to the hook), never
 from newly issued tokens (there are none), and at realistic volume stays far below market price. It
@@ -235,8 +256,10 @@ fee, burn, tender and ask all live in the hook.
 - **Nobody administers the hook or the token.** There is no key to keep, rotate or hand to a
   multisig, and no parameter can change after deployment.
 - **Permissionless keepers.** Anyone may call `redeemPendingFees()` when `pendingFloat() > 0`,
-  `burn()` when `burnOwed() > 0`, and `ask()` once a week when the float is at least 0.6 IMD (the
-  caller earns 0.1 IMD). None is required for trading or tendering to work.
+  `burn()` when `burnDue() > 0`, and `ask()` once a week when the float is at least 0.6 IMD (the
+  caller earns 0.1 IMD). None is required for trading or tendering to work. While a fee is
+  pending, its burn half (`deferredBurn`) waits for the redemption; redeeming is what sends it to
+  0x…dEaD.
 - **If the Intake moves or reprices**, `ask()` reverts (the live Intake refuses a wrong amount or an
   unknown action) and spends nothing; the float keeps accruing and tenders keep working. A new
   weekly report would need a new hook, which the launch does not provide for.
@@ -259,8 +282,14 @@ with the verifier's seed. Tests read no environment variables and depend on no c
   IMD or with ETH, wrong fee, zero fee, dynamic fee, second pool, re-initialization, tick spacing
   not hard-coded); exactly 1% of the IMD side in all four swap modes, fixed and fuzzed, with half
   burned and half kept; short fills; deferred fees on a PERK-only pool recorded once and redeemed
-  once, flushed by the next swap, never double-counted; half of every fee reaches 0x…dEaD once and
-  only once over a mixed sequence (checked against the `FloatCollected` logs); first, last and
+  once, flushed by the next swap, never double-counted; a deferred fee never spends the float on
+  hand (book value, the tender quote, tenders and asks are unchanged until the claim is redeemed,
+  then rise), also when a swapper forces the deferral by emptying the manager's IMD inside its own
+  unlock (`test/mocks/ForcedDeferral.sol`), after a large buy whose fee exceeds the manager's IMD,
+  and on a partial redemption; a fuzzed action sequence proving no swap, redeem, burn or donation
+  ever lowers book value and `deferredBurn` never exceeds `burnOwed` or `pendingFloat`; half of
+  every fee reaches 0x…dEaD once and only once over a mixed sequence (checked against the
+  `FloatCollected` logs); first, last and
   dust tenders; zero-payout reverts; a fuzz that a tender never pays above pro rata and never lowers
   book value; donations only raise book value; ask pays the Intake 0.5 and the caller 0.1, sends the
   exact body, action and empty callback, leaves no allowance, reverts under 0.6 and inside 7 days,

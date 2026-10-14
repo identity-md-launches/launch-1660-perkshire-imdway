@@ -32,11 +32,13 @@ import {IIntake} from "./IIntake.sol";
 ///   pool is bound yet. Everything else reverts, so this hook can never serve a second pool.
 /// - **Burn.** Half of every fee, rounded down, is added to `burnOwed`. Whenever the hook holds IMD
 ///   (after a fee, after a redeem, before a tender or an ask, or on `burn()`) it sends
-///   `min(burnOwed, balance)` to 0x…dEaD. If IMD refuses the transfer the amount stays owed and
-///   nothing reverts.
+///   `min(burnOwed - deferredBurn, balance)` to 0x…dEaD: the burn half of a fee that is still
+///   pending as a claim waits for that claim and is never paid out of the float already held. If
+///   IMD refuses the transfer the amount stays owed and nothing reverts.
 /// - **Tender.** `tender(amount)` burns the caller's PERK and pays `amount * float / circulating`
-///   IMD, rounded down, where float is the hook's IMD less `burnOwed` and circulating is the supply
-///   less what 0x…dEaD already holds. Book value per PERK never falls on a tender.
+///   IMD, rounded down, where float is the hook's IMD less `burnOwed - deferredBurn` and
+///   circulating is the supply less what 0x…dEaD already holds. Book value per PERK never falls on
+///   a tender, and never falls because a fee was taken.
 /// - **Ask.** `ask()` buys one oracle answer (the Chairman's weekly report) through the Intake for
 ///   0.5 IMD and pays its caller 0.1 IMD, at most once every 7 days, only while the float holds at
 ///   least 0.6 IMD. No callback is requested: the answer is read from the oracle's own records.
@@ -117,8 +119,13 @@ contract PerkVaultHook is IHooks, IUnlockCallback {
     /// @notice IMD credited to the float over all time (half of every fee, paid or deferred).
     uint256 public totalFloat;
 
-    /// @notice IMD owed to the burn and not yet sent to 0x…dEaD.
+    /// @notice IMD owed to the burn and not yet sent to 0x…dEaD. Includes `deferredBurn`.
     uint256 public burnOwed;
+
+    /// @notice The part of `burnOwed` whose fee is still pending as an ERC-6909 claim. It is paid
+    /// to 0x…dEaD only once that claim is redeemed, never out of IMD the hook already holds, so a
+    /// deferred fee cannot spend the float. Always at most `burnOwed` and at most `pendingFloat()`.
+    uint256 public deferredBurn;
 
     /// @notice IMD sent to 0x…dEaD by the burn over all time.
     uint256 public totalBurned;
@@ -243,16 +250,25 @@ contract PerkVaultHook is IHooks, IUnlockCallback {
     // ---------------------------------------------------------------------------------------------
 
     /// @notice Fees already taken but not yet transferred to the hook, held as ERC-6909 claims on
-    /// IMD inside the PoolManager. Half of this is already in `burnOwed`, half in `totalFloat`.
+    /// IMD inside the PoolManager. Half of this is already in `burnOwed` (and in `deferredBurn`),
+    /// half in `totalFloat`. It reads the hook's claim balance, so an IMD claim a third party mints
+    /// to the hook shows here too; such a claim is redeemed like a fee and behaves as a donation.
     function pendingFloat() public view returns (uint256) {
         return poolManager.balanceOf(address(this), imd.toId());
     }
 
-    /// @notice The IMD backing tenders right now: the hook's IMD balance less what the burn is owed.
-    /// Pending claims do not count until they are redeemed.
+    /// @notice What the burn can take from the hook's balance right now: `burnOwed` less the part
+    /// whose fee is still pending as a claim.
+    function burnDue() public view returns (uint256) {
+        return burnOwed - deferredBurn;
+    }
+
+    /// @notice The IMD backing tenders right now: the hook's IMD balance less what the burn is due
+    /// from it. Pending claims, and the burn halves that wait for them, do not count until redeemed.
     function floatBalance() public view returns (uint256) {
         uint256 balance = imd.balanceOfSelf();
-        return balance > burnOwed ? balance - burnOwed : 0;
+        uint256 due = burnDue();
+        return balance > due ? balance - due : 0;
     }
 
     /// @notice PERK not yet burned: the total supply less what 0x…dEaD holds.
@@ -502,28 +518,40 @@ contract PerkVaultHook is IHooks, IUnlockCallback {
     // Internals: the vault
     // ---------------------------------------------------------------------------------------------
 
-    /// @dev Sends `min(burnOwed, balance)` IMD to 0x…dEaD. If IMD refuses the transfer, nothing
-    /// changes and nothing reverts: the amount stays owed for a later attempt.
+    /// @dev Sends `min(burnOwed - deferredBurn, balance)` IMD to 0x…dEaD. The burn half of a fee
+    /// that is still pending as a claim is not taken from the float the hook already holds; it is
+    /// paid when that claim is redeemed. If IMD refuses the transfer, nothing changes and nothing
+    /// reverts: the amount stays owed for a later attempt.
     function _burn() internal returns (uint256 amount) {
-        uint256 owed = burnOwed;
-        if (owed == 0) return 0;
+        uint256 due = burnDue();
+        if (due == 0) return 0;
         uint256 balance = imd.balanceOfSelf();
-        amount = owed < balance ? owed : balance;
+        amount = due < balance ? due : balance;
         if (amount == 0) return 0;
         if (!_tryTransfer(imd, DEAD, amount)) return 0;
-        burnOwed = owed - amount;
+        burnOwed -= amount;
         totalBurned += amount;
         emit Burned(amount);
     }
 
     /// @dev Splits a fee the hook has just taken (paid or deferred) between the burn and the float.
-    /// Called exactly once per fee, at the moment it is taken, so nothing is ever counted twice.
+    /// Called exactly once per fee, at the moment it is taken, so nothing is ever counted twice. A
+    /// deferred fee's burn half is also recorded in `deferredBurn` until its claim is redeemed.
     function _account(PoolKey calldata key, uint256 fee, bool paidNow) internal {
         uint256 toBurn = fee / 2;
         uint256 toFloat = fee - toBurn;
         burnOwed += toBurn;
+        if (!paidNow) deferredBurn += toBurn;
         totalFloat += toFloat;
         emit FloatCollected(key.toId(), fee, toBurn, toFloat, paidNow);
+    }
+
+    /// @dev Releases the burn halves that waited for `redeemed` IMD of claims, now that the IMD
+    /// has reached the hook: the burn pays them from the redeemed amount first. After a partial
+    /// redemption `deferredBurn` stays at most the claims still pending.
+    function _release(uint256 redeemed) internal {
+        uint256 deferred = deferredBurn;
+        deferredBurn = deferred - (deferred < redeemed ? deferred : redeemed);
     }
 
     function _requireBound(PoolKey calldata key) internal view {
@@ -608,6 +636,7 @@ contract PerkVaultHook is IHooks, IUnlockCallback {
             uint256 pending = pendingFloat();
             if (pending > 0 && available - fee >= pending && _tryPay(pending)) {
                 poolManager.burn(address(this), imd.toId(), pending);
+                _release(pending);
                 emit PendingFeesRedeemed(address(this), pending);
             }
         } else {
@@ -630,6 +659,7 @@ contract PerkVaultHook is IHooks, IUnlockCallback {
     function _payPending(uint256 amount, address caller) internal {
         poolManager.burn(address(this), imd.toId(), amount);
         poolManager.take(imd, address(this), amount);
+        _release(amount);
         emit PendingFeesRedeemed(caller, amount);
     }
 
