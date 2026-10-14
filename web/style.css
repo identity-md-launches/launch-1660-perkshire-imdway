@@ -1,0 +1,125 @@
+:root {
+  color-scheme: light;
+  --paper: #fffef9;
+  --ink: #202820;
+  --muted: #52584e;
+  --rule: #9b9e8e;
+  --control-border: #72776a;
+  --section: #eeeee5;
+  --button: #e8e8df;
+  --hover: #dcded2;
+  --link: #0000a0;
+  --visited: #551a8b;
+  --green: #244b32;
+  --error: #8a241e;
+  --small: .875rem;
+  --body: 1rem;
+  --subhead: 1.25rem;
+  --heading: 1.75rem;
+  --title: 2rem;
+  --figure: 2.25rem;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-block: 1rem; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: var(--body)/1.5 "Times New Roman", Times, serif; }
+main { max-width: 58rem; margin: 2rem auto; padding-inline: 1rem; }
+a { color: var(--link); text-decoration: underline; text-underline-offset: .15em; }
+a:visited { color: var(--visited); }
+button, input { font: inherit; }
+button { padding: .5rem .75rem; min-height: 44px; color: var(--ink); background: var(--button); border: 2px outset var(--control-border); border-radius: 0; cursor: pointer; }
+button:active { border-style: inset; background: var(--hover); }
+button:disabled { color: var(--muted); background: var(--section); cursor: not-allowed; border-style: solid; }
+button.primary:not(:disabled) { color: var(--paper); background: var(--green); border-color: var(--green); }
+@media (hover: hover) { button:hover:not(:disabled), .wallet-row:hover { background: var(--hover); color: var(--ink); } }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+input { padding: .5rem; min-height: 44px; width: 16rem; max-width: 100%; border: 1px solid var(--muted); border-radius: 0; background: var(--paper); color: var(--ink); }
+input[aria-invalid="true"] { border: 2px solid var(--error); }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: var(--title); line-height: 1.1; }
+h2 { font-size: var(--subhead); line-height: 1.3; }
+h3 { font-size: var(--body); margin-block: 1.25rem .375rem; }
+p + p { margin-block-start: .75rem; }
+button, a, p, td, th, output { overflow-wrap: anywhere; }
+.ledger { border: 1px solid var(--rule); border-collapse: collapse; width: 100%; table-layout: fixed; }
+.label-column { width: 38%; }
+.ledger th, .ledger td { padding: .875rem 1rem; border-block-end: 1px solid var(--rule); text-align: start; vertical-align: top; }
+.ledger th { font-weight: 400; }
+.ledger th + td { border-inline-start: 1px solid var(--rule); }
+.ledger td.masthead { padding: 1.25rem 1rem; }
+header, .identity, .section-line, .dialog-heading, .amount-row, .actions { display: flex; gap: .75rem; align-items: center; }
+header, .section-line, .dialog-heading { justify-content: space-between; }
+header { flex-wrap: wrap; gap: 1rem; }
+.identity { gap: 1rem; }
+.identity p { margin-block-start: .5rem; }
+.logo { display: block; border-radius: 50%; width: 96px; height: 96px; }
+.wallet-control { display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; }
+.small { display: block; font-size: var(--small); line-height: 1.5; color: var(--muted); font-weight: 400; }
+.ledger td.banner { text-align: center; font-style: italic; padding-block: .75rem; }
+.valuation th { vertical-align: middle; }
+#price-to-book { display: block; font-size: var(--figure); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.valuation .small { margin-block-start: .375rem; }
+.tender-cell h2 { margin-block-end: .75rem; }
+.amount-row { flex-wrap: wrap; gap: .5rem 1rem; }
+.quote { margin-block: .75rem; }
+.quote output { font-weight: 700; font-variant-numeric: tabular-nums; }
+.actions { flex-wrap: wrap; align-items: stretch; }
+#tender-terms, #balance { margin-block-start: .75rem; }
+.error { color: var(--error); }
+.error:empty { display: none; }
+#amount-error { margin-block-start: .375rem; }
+#transaction-status:not(:empty) { margin-block-start: 1rem; font-weight: 700; }
+.transaction-link { display: block; margin-block: .5rem; }
+.navigation nav { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.navigation a { min-height: 24px; }
+.section-heading { background: var(--section); }
+.section-line { flex-wrap: wrap; }
+#read-status { margin-block-start: .375rem; }
+.number, .address { font-family: "Courier New", Courier, monospace; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.address { font-size: var(--small); }
+.row-action { display: block; margin-block: .625rem; }
+#market-note:empty { display: none; }
+.report-question { font-style: italic; }
+#ask { margin-block: .75rem .375rem; }
+#report-answer { font-weight: 700; }
+#retry-report { margin-block-start: .375rem; }
+.letter { max-width: 70ch; }
+.letter p, .letter ul { margin-block-end: 1rem; }
+.letter ul { padding-inline-start: 1.25rem; }
+.letter li + li { margin-block-start: .75rem; }
+footer { font-size: var(--small); }
+dialog { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 0; padding: 1rem; width: min(30rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
+dialog::backdrop { background: rgb(32 40 32 / .4); }
+dialog > p, dialog > .actions { margin-block-start: 1rem; }
+.dialog-heading { margin-block-end: .75rem; }
+#close-wallet { width: 44px; padding: .25rem; font-size: var(--subhead); flex-shrink: 0; }
+#wallet-list { display: grid; gap: .75rem; margin-block: 1rem; }
+.wallet-row { display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 48px; text-align: start; padding: .5rem; border: 1px solid var(--control-border); background: var(--button); }
+.wallet-row img { width: 28px; height: 28px; flex-shrink: 0; }
+.wallet-row:disabled { opacity: .6; }
+#connected-details p { margin-block-end: 1rem; }
+.noscript { padding: 1rem; border: 1px solid var(--error); }
+.sr-only, .skip:not(:focus) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skip:focus { display: block; padding: 1rem; }
+[hidden] { display: none !important; }
+@media (max-width: 38rem) {
+  main { margin-block: .75rem; padding-inline: .75rem; }
+  .ledger th, .ledger td { padding: .75rem; }
+  .ledger td.masthead { padding: .875rem .75rem; }
+  h1 { font-size: var(--heading); }
+  .identity { gap: .75rem; }
+  .logo { width: 72px; height: 72px; }
+  .identity > div { min-width: 0; }
+  .identity p { margin-block-start: .375rem; }
+  .wallet-control { flex-direction: row; align-items: center; flex-wrap: wrap; gap: .5rem; }
+  .label-column { width: 42%; }
+  .valuation td { vertical-align: middle; }
+  #price-to-book { font-size: var(--heading); }
+  .amount-row { display: grid; gap: .25rem; }
+  input { width: 100%; }
+  .actions { gap: .5rem; }
+  .actions button { flex: 1 1 100%; }
+  .navigation nav { gap: .5rem 1rem; }
+  dialog { width: calc(100% - 1.5rem); max-height: calc(100dvh - 1.5rem); }
+  #wallet-dialog { margin: auto auto .75rem; padding-block-end: max(1rem, env(safe-area-inset-bottom)); }
+}
+@media (forced-colors: active) { :focus-visible { outline-color: Highlight; } button:disabled { color: GrayText; } }

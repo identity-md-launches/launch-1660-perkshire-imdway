@@ -1,0 +1,52 @@
+{
+  "measurement": "Uncompressed complete tracked plus nonignored untracked file payload; inputs and scratch ignored/excluded by existing repository rules. Publisher generates the final Git bundle.",
+  "limitBytes": 8388608,
+  "payloadFiles": 208,
+  "payloadBytes": 2484747,
+  "exportFiles": 25,
+  "exportBytes": 344989,
+  "checks": {
+    "existing_contract_build_dependencies_unchanged": true,
+    "protected_paths_unchanged": true,
+    "ignore_files_unchanged": true,
+    "all_added_paths_in_deliverable_scope": true,
+    "no_dependency_cache_archive_sourcemap_or_submodule_payload": true,
+    "relative_html_assets_and_local_module_imports_resolve": true,
+    "one_table_and_one_application_module_tag": true,
+    "original_logo_and_export_match": true
+  },
+  "largestFiles": [
+    {
+      "path": "lib/forge-std/src/safeconsole.sol",
+      "bytes": 408927
+    },
+    {
+      "path": "lib/forge-std/src/Vm.sol",
+      "bytes": 162622
+    },
+    {
+      "path": "web/validation/desktop-1440.png",
+      "bytes": 140607
+    },
+    {
+      "path": "dist/assets/coinbase-D6WKONZC.js",
+      "bytes": 106782
+    },
+    {
+      "path": "dist/assets/chunk-CNVAWFY2.js",
+      "bytes": 89937
+    },
+    {
+      "path": "web/validation/wallet-mobile-webkit.png",
+      "bytes": 80829
+    },
+    {
+      "path": "web/validation/mobile-390.png",
+      "bytes": 79541
+    },
+    {
+      "path": "lib/forge-std/src/console.sol",
+      "bytes": 71039
+    }
+  ]
+}

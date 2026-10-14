@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "launchId": "80a241f0-bb62-46ae-9712-2512f5e9f683",
+  "chainId": 4663,
+  "repoUrl": "https://github.com/identity-md-launches/launch-1660-perkshire-imdway",
+  "sourceCommit": "4329d97b05699e0d796c86ba4310d4df83e4381e",
+  "attestationHash": "7ef5fdc7bac07bcd201b44babafcaf4f749ea61f448be623e66439b2f0637a70",
+  "manifest": {
+    "kind": "univ4_hook",
+    "hook": {
+      "contract": "PerkVaultHook",
+      "constructorArgs": [
+        "$poolManager",
+        "$token",
+        "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+        "$factory"
+      ],
+      "permissions": [
+        "beforeInitialize",
+        "beforeSwap",
+        "afterSwap",
+        "beforeSwapReturnDelta",
+        "afterSwapReturnDelta"
+      ]
+    },
+    "token": {
+      "contract": "PerkToken",
+      "name": "Perkshire IMDway",
+      "symbol": "PERK",
+      "decimals": 18
+    },
+    "pool": {
+      "pairedCurrency": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+      "fee": 12500,
+      "tickSpacing": 60,
+      "initialPrice": "79228162514264337593543950336"
+    },
+    "notes": "PerkVaultHook is the PERK/IMD Uniswap v4 hook and Retained Earnings Vault on Robinhood Chain (4663). Its PoolManager-only beforeInitialize binds exactly one pool initialized by the immutable factory, with the immutable PERK and IMD currencies and static LP fee 12500; it does not hard-code tick spacing. The hook collects a 1% IMD fee in both directions and both exact-input and exact-output modes using the RnnnFeeHook simulation and return-delta mechanism, on top of the 1.25% LP fee. Each fee is accounted once: half rounded down becomes burnOwed, and the remainder becomes totalFloat. Fees that cannot be transferred remain ERC-6909 claims held by the hook, reported by pendingFloat and redeemable through permissionless redeemPendingFees. Burn attempts send available IMD up to burnOwed to the dead address; refused transfers remain owed. Holders may tender PERK to the dead address for a rounded-down pro-rata payout from the hook's IMD balance less burnOwed, using circulating PERK before the tender as the denominator. Unredeemed claims do not back payouts; zero payouts revert. Anyone may call ask, first at any time and then at least seven days apart, with at least 0.6 IMD available after burn reserves. It pays 0.5 IMD to Intake 0xa43e6f75ee006411f79ac1c84120606c2330de82 for oracle.request@oracle-1 using the fixed weekly IMD-burn question, pays the caller 0.1 IMD, requests no callback and clears remaining allowance. IMD exits only through burn, tender and ask. Both contracts have no owner, admin or upgrade path. PerkToken is a plain ERC-20 with no constructor arguments or post-deployment minting. The recorded initialPrice is the launch reference value; the deployer derives the opening price from launch policy. This deliverable covers the hook and token only. Parody only: not affiliated with Berkshire Hathaway, Warren Buffett or Charlie Munger; PERK is not a share or equity in any company and promises no yield."
+  },
+  "contracts": [
+    {
+      "name": "PerkToken",
+      "address": "0x2b2ed02698a82230f11d6285f3b147e3fd6df83a",
+      "txHash": "0x31ad7c183c844ccab6e3ca206e9a6e7bd7c5882269cf6fc0ea63360fe5b6c3d6",
+      "blockNumber": 87932208,
+      "creationCodeHash": "cc934250c8eaa927dee30d675e4d09d0b8860052fa02f9e6f6d3dbd6748fc6e0",
+      "abiHash": "85f673a63a471f7f1d303426bcf773f3f6a5e11cb46157372a3cc7b8b0651bf7"
+    },
+    {
+      "name": "PerkVaultHook",
+      "address": "0x708babc63fd376d359eff785d58ae462b5bea0cc",
+      "txHash": "0x31ad7c183c844ccab6e3ca206e9a6e7bd7c5882269cf6fc0ea63360fe5b6c3d6",
+      "blockNumber": 87932208,
+      "creationCodeHash": "f2d27f3c69bb2c370aefb04e059d050964f49c98d41fbe88f5117a39b5c98824",
+      "abiHash": "788219722b48996a2674ba652db3c6154f8d60ca56be3d5d796e6d5e8c909d51"
+    }
+  ],
+  "abiInstructions": "Build ABIs from this exact source commit; compare canonicalKeccak(abi) with abiHash. Verify deployed code on the stated chain before enabling transactions."
+}

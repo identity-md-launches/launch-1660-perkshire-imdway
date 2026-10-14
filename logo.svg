@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Warren Peppett</title>
+  <desc id="desc">An original green frog in thick round glasses and a three-piece navy suit, reading the financial pages at his desk.</desc>
+  <rect width="512" height="512" fill="#f4edda"/>
+  <g stroke="#202a24" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M132 408V331c0-51 47-85 124-85s124 34 124 85v77" fill="#334551"/>
+    <path d="m211 270 45 13 45-13-10 124h-73Z" fill="#faf6e9"/>
+    <path d="m241 285 15-7 15 7-8 20 15 61-22 26-22-26 15-61Z" fill="#914837"/>
+    <path d="m192 278 36 30 28 84-46 17-38-95Z" fill="#5b6c71"/>
+    <path d="m320 278-36 30-28 84 46 17 38-95Z" fill="#5b6c71"/>
+    <path d="m189 278-26 56 29 3-10 20 30 48m111-127 26 56-29 3 10 20-30 48" fill="none"/>
+    <circle cx="268" cy="363" r="4" fill="#f4edda" stroke="none"/>
+    <path d="M145 160c-4-43 16-69 48-69 27 0 39 12 45 29h36c6-17 18-29 45-29 32 0 52 26 48 69 16 21 20 40 10 63-17 41-71 61-121 61s-104-20-121-61c-10-23-6-42 10-63Z" fill="#7b9d57"/>
+    <path d="M157 213c23 19 63 27 99 27s76-8 99-27" fill="#a9bc79"/>
+    <path d="M184 222c20 12 51 17 72 17s52-5 72-17" fill="none" stroke-width="6"/>
+    <circle cx="195" cy="167" r="43" fill="#faf6e9" stroke-width="13"/>
+    <circle cx="317" cy="167" r="43" fill="#faf6e9" stroke-width="13"/>
+    <path d="M239 165c8-9 26-9 34 0m-124-2-14-7m232 7 14-7" fill="none" stroke-width="11"/>
+    <path d="M170 149c13-9 31-9 46 0m80 0c15-9 33-9 46 0" fill="none" stroke-width="5"/>
+    <ellipse cx="201" cy="174" rx="7" ry="12" fill="#202a24" stroke="none"/>
+    <ellipse cx="311" cy="174" rx="7" ry="12" fill="#202a24" stroke="none"/>
+    <path d="m145 347 102 19 20 63-115-23Z" fill="#faf6e9"/>
+    <path d="m247 366 113-27-9 68-84 22Z" fill="#fffdf5"/>
+    <path d="m167 365 58 11m-57 7 40 8m74-13 53-13m-49 29 20-5 3-10 14 3 9-13" fill="none" stroke-width="5"/>
+    <path d="M151 357c-7-9-30-2-33 13-4 17 18 33 40 26 13-5 9-14 0-17 10-2 8-14-3-16" fill="#7b9d57" stroke-width="7"/>
+    <path d="M354 354c7-9 30-2 33 13 4 17-18 33-40 26-13-5-9-14 0-17-10-2-8-14 3-16" fill="#7b9d57" stroke-width="7"/>
+    <path d="M62 431h388v42H62Z" fill="#a0784f"/>
+    <path d="M62 431h388" stroke-width="12"/>
+  </g>
+</svg>

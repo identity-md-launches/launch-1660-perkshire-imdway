@@ -1,4 +1,58 @@
-# Perkshire IMDway (PERK): token and Retained Earnings Vault hook
+# Perkshire IMDway (PERK)
+
+The **perkshire** website is in `web/`; its finished static export is in **`dist/`**. It is a light-only, 1995-style HTML page with one table, native forms and a small browser application, without a UI framework. The launch-1660 Solidity contracts, Foundry configuration and existing dependencies are unchanged.
+
+## Install, rebuild and preview the website
+
+Requires Node.js 22 or later and npm. To keep generated dependencies and caches outside this checkout:
+
+```sh
+mkdir -p /tmp/perkshire-tools
+cp web/package.json web/package-lock.json /tmp/perkshire-tools/
+npm ci --prefix /tmp/perkshire-tools --cache /tmp/perkshire-npm-cache
+PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/typecheck.mjs
+PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/build.mjs
+node web/scripts/preview.mjs
+```
+
+Open **http://127.0.0.1:4173/preview/**. The preview serves the production export at a subpath; stop it with Ctrl-C. `PORT` can select another local port. `PERK_TOOLCHAIN` points to the directory containing the installed frontend package manifest. The equivalent npm scripts are in `web/package.json`.
+
+The build checks both pinned ABI hashes, fills the known contract links into `web/index.html`, bundles the wallet/read script, copies local assets, and renders the original `logo.svg` into `logo-512.png`. It replaces only `dist/`, the generated logo PNG and build reports. A normal frontend rebuild needs no RPC, secrets, requester account, Foundry build or removed `.imd/reads` inputs. The SDK is loaded on demand for Coinbase connections; no relay or WalletConnect project ID is used.
+
+Serve the contents of `dist/` on a static host. Asset paths are relative and navigation uses in-page anchors, so gateway subpaths work without server rewrites. The assignment's publisher handles pinning this export and naming it **perkshire** after handoff. No live hosting URL is claimed here. Do not submit dependency folders, caches, browser downloads or package archives. No ignore files were changed.
+
+## What the page does
+
+- Reads all balances, counters, token decimals, fee constants, weekly costs, timing and tender quotes from the live contracts. Reads the bound v4 pool through StateView; computes spot price and price-to-book with integer arithmetic at one block. Zero book value produces an undefined ratio; failed reads never become zero balances.
+- Verifies chain 4663, pinned deployed bytecode hashes, hook currencies and PoolManager before enabling transactions. Public RPCs are tried first, with a correctly connected wallet as a fallback.
+- Discovers named EIP-6963 wallets, supports legacy browser providers, offers mobile wallet-browser links and the locally bundled Coinbase Wallet/Smart Wallet SDK. Offers the pinned network add/switch parameters; updates on account/network changes.
+- Quotes before signing, approves the exact entered PERK amount, simulates transactions, estimates ETH gas and shows a review before opening the wallet. A changed tender quote requires another review. The contract itself has no minimum-payout protection.
+- Tracks receipts and reports actual tender/burn/redemption event amounts. Pending hashes survive reload; failed or replaced transaction tracking can be cleared explicitly, with a warning that this does not cancel the transaction.
+- Resolves the latest `Asked` event by its chain timestamp, including multiple blocks in one second. Maps the Intake request ID through `/intake/4663/:transactionHash` to the oracle UUID, then reads the exact `/oracle/requests/:id`. Other requests with the same question are not substituted.
+
+The constant fictional management/HQ, launch number and creator-allocation disclosures are supplied editorial copy, not cached financial readings. Current pool liquidity may be zero; a spot price is not a trade quote. The report service is an external dependency and its reported answer is not independently signature-verified by this page.
+
+## Website validation
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=/tmp/perkshire-browsers /tmp/perkshire-tools/node_modules/.bin/playwright install chromium webkit
+PERK_TOOLCHAIN=/tmp/perkshire-tools PLAYWRIGHT_BROWSERS_PATH=/tmp/perkshire-browsers node web/scripts/check.mjs
+```
+
+On Linux, install Playwright's required OS browser libraries if they are absent. The check runs its own temporary server and closes it. RPC and wallet interactions are isolated fixtures: it never signs with a real account or spends funds. A missing browser is reported as unperformed and exits nonzero.
+
+Actual worker results: production build and strict typecheck passed; **26 grouped browser checks passed across Chromium and WebKit**; axe reported **zero violations** in both engines; the pinned taste@1 probe passed **16/16**. Live RPC reads and the real Coinbase onboarding popup were also inspected. No funded wallet, passkey registration or live transaction was used. See [VALIDATION.md](VALIDATION.md) for commands, findings, coverage, source locations and limitations, and [DESIGN.md](DESIGN.md) for the implemented design. Machine-readable results are in `web/validation/`; extra worker artifacts are in `artifacts/`.
+
+To repeat the optional source/deployment check with Foundry and curl installed:
+
+```sh
+forge build --out test/scratch/foundry-out --cache-path test/scratch/foundry-cache
+PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/verify-contracts.mjs
+```
+
+This checks the ABI hashes and live deployed code against compiled source (masking constructor immutable slots), then verifies the browser's complete runtime-code pins. It does not deploy anything. Original contract documentation follows.
+
+## Token and Retained Earnings Vault hook
 
 Foundry project for the Perkshire IMDway token and its Uniswap v4 hook on Robinhood Chain
 (chain id 4663), paired with IMD. The hook is also the project's vault: it collects a 1% IMD fee on

@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "4329d97b05699e0d796c86ba4310d4df83e4381e",
+  "abiHashesVerified": [
+    {
+      "name": "PerkToken",
+      "abiHash": "85f673a63a471f7f1d303426bcf773f3f6a5e11cb46157372a3cc7b8b0651bf7"
+    },
+    {
+      "name": "PerkVaultHook",
+      "abiHash": "788219722b48996a2674ba652db3c6154f8d60ca56be3d5d796e6d5e8c909d51"
+    }
+  ],
+  "sourceHashes": {
+    "src/PerkToken.sol": "be9bdb7d4dcbba975ea7b1bddb2e2335ec0d092e610488adfa3de5f63f8d10da",
+    "src/PerkVaultHook.sol": "ddc308c41149450e8825ff6377a2514bff249f328de91dd04d510154d5aabd51",
+    "src/IIntake.sol": "3d7b2c8f1c7e996597788f5b64e95d09df9afdb99c451750c9a49eb7869756de"
+  },
+  "outputs": [
+    {
+      "path": "dist/assets/app.js",
+      "bytes": 24784
+    },
+    {
+      "path": "dist/assets/secp256k1-SFOPMI2N.js.LEGAL.txt",
+      "bytes": 392
+    },
+    {
+      "path": "dist/assets/secp256k1-SFOPMI2N.js",
+      "bytes": 35809
+    },
+    {
+      "path": "dist/assets/ccip-KYLPQT2Y.js",
+      "bytes": 219
+    },
+    {
+      "path": "dist/assets/native-CEMYMXM4.js",
+      "bytes": 345
+    },
+    {
+      "path": "dist/assets/coinbase-D6WKONZC.js.LEGAL.txt",
+      "bytes": 155
+    },
+    {
+      "path": "dist/assets/coinbase-D6WKONZC.js",
+      "bytes": 106782
+    },
+    {
+      "path": "dist/assets/chunk-7T4CQUCY.js",
+      "bytes": 21245
+    },
+    {
+      "path": "dist/assets/chunk-CNVAWFY2.js.LEGAL.txt",
+      "bytes": 131
+    },
+    {
+      "path": "dist/assets/chunk-CNVAWFY2.js",
+      "bytes": 89937
+    },
+    {
+      "path": "dist/assets/chunk-BGCIORVM.js.LEGAL.txt",
+      "bytes": 140
+    },
+    {
+      "path": "dist/assets/chunk-BGCIORVM.js",
+      "bytes": 4080
+    },
+    {
+      "path": "dist/assets/chunk-SQE76S5B.js",
+      "bytes": 577
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "perkshire",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/typecheck.mjs",
+    "preview": "node scripts/preview.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@coinbase/wallet-sdk": "4.4.0",
+    "@noble/hashes": "2.4.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1",
+    "sharp": "0.35.5",
+    "typescript": "5.9.3"
+  }
+}

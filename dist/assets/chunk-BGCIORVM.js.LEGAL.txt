@@ -1,0 +1,4 @@
+Bundled license information:
+
+@noble/curves/esm/abstract/utils.js:
+  /*! noble-curves - MIT License (c) 2022 Paul Miller (paulmillr.com) */

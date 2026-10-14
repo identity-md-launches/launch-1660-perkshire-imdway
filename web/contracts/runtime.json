@@ -1,0 +1,200 @@
+{
+  "PerkToken": {
+    "codeHash": "0x9577e84a058fb2c5e005e0eaf2374463e0110293a1031e5ccc313dc951aff016",
+    "compiledRuntimeHash": "0x0d74f26ddf04d38af6befe87c563de6f422869f188ec42fd79ccca8267469127",
+    "immutableReferences": {
+      "53081": [
+        {
+          "start": 268,
+          "length": 32
+        }
+      ]
+    }
+  },
+  "PerkVaultHook": {
+    "codeHash": "0x4a08f7a02233da17dba1ac2cc3259e3f07bcb0f1ee61cb023d33918020a32f26",
+    "compiledRuntimeHash": "0x7c37f1717f5932851610a0e4dc506c0915907c93c8ed66b438c606ef108db60f",
+    "immutableReferences": {
+      "53415": [
+        {
+          "start": 1624,
+          "length": 32
+        },
+        {
+          "start": 1765,
+          "length": 32
+        },
+        {
+          "start": 2726,
+          "length": 32
+        },
+        {
+          "start": 3026,
+          "length": 32
+        },
+        {
+          "start": 3480,
+          "length": 32
+        },
+        {
+          "start": 3702,
+          "length": 32
+        },
+        {
+          "start": 4005,
+          "length": 32
+        },
+        {
+          "start": 4168,
+          "length": 32
+        },
+        {
+          "start": 4516,
+          "length": 32
+        },
+        {
+          "start": 4764,
+          "length": 32
+        },
+        {
+          "start": 6920,
+          "length": 32
+        },
+        {
+          "start": 6979,
+          "length": 32
+        },
+        {
+          "start": 7252,
+          "length": 32
+        },
+        {
+          "start": 7943,
+          "length": 32
+        },
+        {
+          "start": 8076,
+          "length": 32
+        },
+        {
+          "start": 8346,
+          "length": 32
+        },
+        {
+          "start": 9314,
+          "length": 32
+        }
+      ],
+      "53419": [
+        {
+          "start": 1031,
+          "length": 32
+        },
+        {
+          "start": 3300,
+          "length": 32
+        },
+        {
+          "start": 3865,
+          "length": 32
+        },
+        {
+          "start": 4927,
+          "length": 32
+        },
+        {
+          "start": 7622,
+          "length": 32
+        }
+      ],
+      "53423": [
+        {
+          "start": 1682,
+          "length": 32
+        },
+        {
+          "start": 2160,
+          "length": 32
+        },
+        {
+          "start": 2362,
+          "length": 32
+        },
+        {
+          "start": 2483,
+          "length": 32
+        },
+        {
+          "start": 2550,
+          "length": 32
+        },
+        {
+          "start": 2613,
+          "length": 32
+        },
+        {
+          "start": 2812,
+          "length": 32
+        },
+        {
+          "start": 3369,
+          "length": 32
+        },
+        {
+          "start": 3530,
+          "length": 32
+        },
+        {
+          "start": 5348,
+          "length": 32
+        },
+        {
+          "start": 5468,
+          "length": 32
+        },
+        {
+          "start": 5552,
+          "length": 32
+        },
+        {
+          "start": 6886,
+          "length": 32
+        },
+        {
+          "start": 7030,
+          "length": 32
+        },
+        {
+          "start": 7199,
+          "length": 32
+        },
+        {
+          "start": 7909,
+          "length": 32
+        },
+        {
+          "start": 8127,
+          "length": 32
+        },
+        {
+          "start": 8397,
+          "length": 32
+        },
+        {
+          "start": 9259,
+          "length": 32
+        }
+      ],
+      "53426": [
+        {
+          "start": 1283,
+          "length": 32
+        },
+        {
+          "start": 4828,
+          "length": 32
+        }
+      ]
+    }
+  }
+}

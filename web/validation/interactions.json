@@ -1,0 +1,111 @@
+{
+  "isolation": "Synthetic JSON-RPC and EIP-1193 wallet; all external calls intercepted. No live signing or funds used.",
+  "results": [
+    {
+      "name": "Chromium: one table, spot-price math, reflow at 320/390/610/768/1440, primary action on first screen",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: EIP-6963, keyboard dismissal/focus return, exact approval, tender calldata, simulation, receipt and actual payout",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: redeem, burn, ask costs/reward, cooldown and exact Asked → Intake → oracle report linkage",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: axe accessibility scan of loaded page",
+      "result": "passed",
+      "details": "45 rules passed; no violations"
+    },
+    {
+      "name": "Chromium: wrong-network action gate, 4902 add-chain fallback, pinned parameters and account-change refresh",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: dismissed unresolved wallet request can retry; late connection response ignored",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: invalid/dust/oversized/over-balance input, signature rejection/retry, quote-change review and no-op burn prevention",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: zero book value/float, zero-payout tender and insufficient-float ask",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: oracle price change and exact seven-day eligibility boundary",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: bytecode mismatch fail-closed, partial pool failure and RPC outage/recovery",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: unrelated oracle answer rejected; report pending state",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: receipt failure/retry, tracking warning, pending reload without rebroadcast and onchain revert",
+      "result": "passed"
+    },
+    {
+      "name": "Chromium: mobile wallet deep links, Smart Wallet entry and 200% text enlargement",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: one table, spot-price math, reflow at 320/390/610/768/1440, primary action on first screen",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: EIP-6963, keyboard dismissal/focus return, exact approval, tender calldata, simulation, receipt and actual payout",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: redeem, burn, ask costs/reward, cooldown and exact Asked → Intake → oracle report linkage",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: axe accessibility scan of loaded page",
+      "result": "passed",
+      "details": "45 rules passed; no violations"
+    },
+    {
+      "name": "WebKit: wrong-network action gate, 4902 add-chain fallback, pinned parameters and account-change refresh",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: dismissed unresolved wallet request can retry; late connection response ignored",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: invalid/dust/oversized/over-balance input, signature rejection/retry, quote-change review and no-op burn prevention",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: zero book value/float, zero-payout tender and insufficient-float ask",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: oracle price change and exact seven-day eligibility boundary",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: bytecode mismatch fail-closed, partial pool failure and RPC outage/recovery",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: unrelated oracle answer rejected; report pending state",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: receipt failure/retry, tracking warning, pending reload without rebroadcast and onchain revert",
+      "result": "passed"
+    },
+    {
+      "name": "WebKit: mobile wallet deep links, Smart Wallet entry and 200% text enlargement",
+      "result": "passed"
+    }
+  ]
+}
