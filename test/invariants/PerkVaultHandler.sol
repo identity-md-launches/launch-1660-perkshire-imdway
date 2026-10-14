@@ -253,7 +253,9 @@ contract PerkVaultHandler is Test {
         if (deadBlocked || hookBlocked) {
             assertEq(sent, 0, "burned while IMD refused the transfer");
         } else {
-            assertTrue(hook.burnOwed() == 0 || imd.balanceOf(address(hook)) == 0, "burn left IMD and debt");
+            // The burn halves of fees still pending wait for their claims (`deferredBurn`); only
+            // `burnDue` is payable from the IMD on hand.
+            assertTrue(hook.burnDue() == 0 || imd.balanceOf(address(hook)) == 0, "burn left IMD and debt due");
         }
         ghostBurns += 1;
         _noteBookValue();
@@ -354,12 +356,14 @@ contract PerkVaultHandler is Test {
         uint256 owed = hook.burnOwed();
         uint256 totalFloat = hook.totalFloat();
         uint256 bv = hook.bookValuePerPerk();
+        uint256 float_ = hook.floatBalance();
         vm.prank(actor);
         imd.transfer(address(hook), amount);
         ghostDonated += amount;
         assertEq(hook.burnOwed(), owed, "a donation changed burnOwed");
         assertEq(hook.totalFloat(), totalFloat, "a donation was counted as a fee");
         assertGe(hook.bookValuePerPerk(), bv, "a donation lowered book value");
+        assertEq(hook.floatBalance(), float_ + amount, "a donation did not raise the float by its amount");
         _noteBookValue();
     }
 
@@ -388,6 +392,7 @@ contract PerkVaultHandler is Test {
         uint256 burnOwed;
         uint256 totalBurned;
         uint256 bookValue;
+        uint256 deferredBurn;
     }
 
     function _snap(address actor) internal view returns (Snap memory s) {
@@ -400,6 +405,7 @@ contract PerkVaultHandler is Test {
         s.burnOwed = hook.burnOwed();
         s.totalBurned = hook.totalBurned();
         s.bookValue = hook.bookValuePerPerk();
+        s.deferredBurn = hook.deferredBurn();
     }
 
     /// @dev Every fee is counted once, at the moment it is taken: the float half in `totalFloat`,
@@ -416,15 +422,14 @@ contract PerkVaultHandler is Test {
             hook.totalBurned() + hook.burnOwed() - s.totalBurned - s.burnOwed, fee / 2, "burn half is not floor(fee/2)"
         );
         if (hook.pendingFloat() > s.pending) {
-            // Deferred: the whole fee is a claim and none of it reached the hook. Its burn half is
-            // owed at once and is paid from whatever IMD the hook already holds, so the book value
-            // *view* can fall by up to fee/2 until the claim is redeemed (see the findings file).
-            // Counting the claim, book value still rises: `_noteBookValue` checks that.
+            // Deferred: the whole fee is a claim and none of it reached the hook. Its burn half
+            // waits in `deferredBurn` for the claim, so the float on hand is not spent on it.
             assertEq(hook.pendingFloat() - s.pending, fee, "deferred other than the whole fee");
+            assertEq(hook.deferredBurn() - s.deferredBurn, fee / 2, "deferred burn half not recorded");
             ghostDeferredSwaps += 1;
-        } else {
-            assertGe(hook.bookValuePerPerk(), s.bookValue, "a paid-at-once swap lowered book value");
         }
+        // Paid or deferred, a swap never lowers the book value view.
+        assertGe(hook.bookValuePerPerk(), s.bookValue, "a swap lowered book value");
         assertEq(perk.balanceOf(address(hook)), 0, "the hook took PERK");
         _noteBookValue();
     }

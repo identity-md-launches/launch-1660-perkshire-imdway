@@ -122,10 +122,17 @@ contract PerkVaultInvariantsTest is PerkVaultBase {
         // view never counts the owed half.
         uint256 bal = imd.balanceOf(address(hook));
         uint256 owed = hook.burnOwed();
-        assertEq(hook.floatBalance(), bal > owed ? bal - owed : 0, "float counts the burn half");
+        uint256 deferred = hook.deferredBurn();
+        assertLe(deferred, owed, "deferredBurn exceeds burnOwed");
+        assertLe(deferred, hook.pendingFloat(), "deferredBurn exceeds the pending claims");
+        assertEq(hook.burnDue(), owed - deferred, "burnDue formula");
+        uint256 due = owed - deferred;
+        assertEq(hook.floatBalance(), bal > due ? bal - due : 0, "float counts the burn half due");
         // Tenders and asks spend only the float, so the only way owed can exceed cash is a fee
-        // whose IMD is still pending: cash plus pending always covers the debt.
+        // whose IMD is still pending: cash plus pending always covers the debt, and cash alone
+        // covers the part due unless IMD refuses the hook or 0x…dEaD.
         assertGe(bal + hook.pendingFloat(), owed, "owed more than pending plus cash");
+        assertGe(bal, due, "burn due exceeds the hook's IMD");
     }
 
     // ---------------------------------------------------------------------------------------------
