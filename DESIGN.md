@@ -1,73 +1,44 @@
-# Perkshire design
+# PERK redirect design
 
 ## Overview
 
-Perkshire is a holder's ledger and tender form for a value-investing parody. The explicit direction is “plain 1995 HTML, light only, no frameworks.” The implementation uses a single bordered HTML table, browser-native controls, underlined blue links, system serif text and an original frog illustration. There are no cards, gradients, webfonts, dark theme, decorative motion or hero that separates the product from its controls.
+The `perk` site sends visitors to the creator's supplied new PERK website. `web/index.html` is the single source; `dist/index.html` and `dist/404.html` are identical build outputs. The entire visible interface, when automatic navigation is blocked, is one native link: “Continue to Perkshire IMDway (PERK)”. The brief's “No other text, images or styles” controls the visible page.
 
-The leading rows show the product, free wallet connection, requested banner, price-to-book and the tender form. Live accounts, the weekly report, company particulars, the letter and the disclosures follow in that order. The entire page exists as static HTML; the script adds readings and wallet behavior. Source: `web/index.html`, `web/style.css`, `web/src/`.
+## Colors and tokens
 
-## Colors
+There are no authored color tokens, custom properties, stylesheets or inline styles. Colors come from browser and visitor preferences. In the inspected Chromium fallback, the unvisited link was `rgb(0, 0, 238)` on a white canvas; the probe measured contrast at 9.4:1. This is an observation, not a palette enforced by the source. The underline communicates the action independently of color.
 
-All colors use CSS custom properties in `web/style.css:1`.
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `--paper` | `#fffef9` | Page, input and dialog background; primary-button text |
-| `--ink` | `#202820` | Main text and dialog frame |
-| `--muted` | `#52584e` | Supporting and disabled text |
-| `--rule` | `#9b9e8e` | Noninteractive table rules |
-| `--control-border` | `#72776a` | Visible control boundaries |
-| `--section` | `#eeeee5` | Section-heading rows and disabled controls |
-| `--button` | `#e8e8df` | Native-style control fill |
-| `--hover` | `#dcded2` | Hover/pressed fill |
-| `--link` | `#0000a0` | Underlined links and keyboard focus |
-| `--visited` | `#551a8b` | Visited links |
-| `--green` | `#244b32` | Available tender and confirmation buttons |
-| `--error` | `#8a241e` | Inline errors, accompanied by explanatory text |
-
-Measured against the rendered paper color: ink 15.01:1, muted 7.26:1 and link/focus 13.79:1. Paper text on the green button is 9.78:1. The softer table rule is structural; controls have their own darker boundary token. These measurements and the probe's text-contrast pass are limited to the inspected states, not a claim of full WCAG conformance.
+The required favicon and sharing image appear only in head metadata (`web/index.html:11` and `:12`) and reference the new site's existing image. There are no body images or local asset files. No theme, status palette, gradients or decorations are implemented.
 
 ## Typography
 
-- Prose, headings and controls: `"Times New Roman", Times, serif`; numbers and full addresses: `"Courier New", Courier, monospace`. No font downloads.
-- Six declared steps: `--small` 14px, `--body` 16px, `--subhead` 20px, `--heading` 28px, `--title` 32px, `--figure` 36px, at the normal 16px root. Weights are 400 and 700; the banner and sign-off use native italic.
-- Body line-height is 1.5; title and price-to-book use 1.1, section headings 1.3. Natural letter-spacing throughout.
-- The mobile title/ratio are 28px; the desktop title is 32px and ratio 36px. The final probe found four sizes at 390 and five including single-use sizes at 1440.
-- The letter is capped at `70ch`. Live numbers use tabular numerals. Critical amounts and addresses wrap instead of being clipped, shortened or hidden; the connected-wallet button's short address has a full address in its dialog.
-- Inputs remain 16px or larger. User zoom is not restricted. 200% text enlargement was exercised in both engines; native browser zoom and screen-reader pronunciation were not tested.
+There is no font dependency or authored type scale. The native anchor inherits the browser's default text styling; Chromium measured one 16px, weight-400 Times New Roman style with normal tracking. User settings may change it. Text remains selectable, naturally wraps, and is never truncated. The document declares English and allows browser zoom (`web/index.html:2` and `:7`).
 
-## Layout
+## Layout and responsive behavior
 
-`main` is at most `58rem` (928px), centered with `2rem` vertical margin and `1rem` inline padding. The ledger collapses its borders and uses fixed-layout columns at 38%/62%. Regular cells have 14px vertical and 16px horizontal padding. Common small gaps are 4, 6, 8 and 12px; section and reading spaces are 16–32px.
+The anchor is the body's only element, in normal document flow (`web/index.html:15`). There is no grid, fixed sizing, positioning, hero, breakpoint, spacing token or container component. Chromium's default body inset measured 8px. The product name and fallback action are at the first screen's leading edge.
 
-At `max-width: 38rem` (608px), the page margin/padding becomes 12px, cell padding 12px, columns 42%/58%, the logo 72px, the amount label/input stack, and transaction buttons each use the available row width. The header and section controls wrap naturally. At larger widths the logo is 96px and amount/transaction controls can sit alongside each other. Nothing is fixed over the document.
+Checks at 320, 390, 768 and 1440 CSS pixels found no horizontal overflow or clipped action. Increasing the link text to 200% at 320px in the test page reflowed without horizontal scrolling. Native browser zoom, other locales and native-device behavior were not tested; no alternative layout or localization is claimed.
 
-Both engines were checked at 320, 390, 610, 768 and 1440px with no horizontal overflow. At 390×844 the connect control and complete tender action are on the first screen; the tender button's bottom is approximately 714px. The monetary-risk note stays next to that control. Full addresses remain available at narrow widths.
+## Elevation, depth and shapes
 
-## Elevation and shapes
+The page has no surfaces, borders, shadows, radii, clipping or overlays. The native link's focus outline is preserved. There are no animated states or reduced-motion-specific rules because no animation exists.
 
-The ledger is flat: one 1px frame and row rules, no shadow. Section-heading rows use a quiet fill. Buttons have square native-style 2px outset borders, inset when pressed. Inputs have a square 1px border (2px when invalid). Dialogs use a 2px ink frame and a translucent `rgb(32 40 32 / .4)` backdrop, without a shadow.
-
-The only circle is the logo crop. `logo.svg` is an original 512×512 flat-color drawing; `logo-512.png` is generated from it. The glasses, face, suit, financial pages and desk sit inside a circle-safe composition. The same local assets provide the identity, favicon and share image.
-
-## Components and states
+## Components and behavior
 
 | Pattern | Source | Behavior |
 | --- | --- | --- |
-| Ledger row / section row | `web/index.html`, `.ledger`, `.section-heading` | Native table semantics; units alongside values; loading/unavailable are words, never fake zeros |
-| Valuation | `.valuation`, `#price-to-book` | Prominent ratio; “Undefined” at zero book value; unavailable on a failed price read |
-| Amount/quote form | `#tender-form`, `web/src/app.ts:107` | Explicit label, decimal keyboard, exact BigInt parsing, latest-only quote results, inline errors and balance/allowance |
-| Action buttons | `button`, `.primary`, `.actions`, `.row-action` | 44px minimum height; neutral/green/rest/hover/pressed/focus/disabled states; unavailable actions explain their requirements in text |
-| Wallet chooser | `web/src/wallet.ts`, `#wallet-dialog`, `.wallet-row` | Native modal; 48px named wallet rows and vendor marks; mobile wallet-browser links; bottom placement below 608px; Escape/backdrop/close button; explicit focus return; abandoned requests can retry |
-| Transaction review | `web/src/app.ts:201`, `#review-dialog` | Exact consequences, address, gas budget and cost before signing; cancel; repeat review if the simulated tender payout changes |
-| Transaction status | `#transaction-status`, `#transaction-link`, `#check-receipt` | Polite status region, explorer link, receipt retry; no automatic rebroadcast; local pending tracking survives reload |
-| Tracking recovery | `#tracking-dialog` | Explicit warning that clearing a local record does not cancel a transaction |
-| Weekly report | `#weekly`, `web/src/chain.ts:159` | Chain-clock eligibility and live oracle price; empty/pending/failed/answered states; exact onchain request linkage |
+| Immediate navigation | `web/index.html:5` and `:6` | Meta refresh uses delay 0. Synchronous `location.replace` executes in the head, before the body. Both use the exact supplied root URL without forwarding old query/fragment values. |
+| Fallback navigation | `web/index.html:15` | Native anchor, default underline, same-tab navigation and browser context-menu support. Tab focuses it; Enter follows it. The native focus outline was viewed at 390px. |
+| Static path fallback | `web/scripts/build.mjs:13` | Builds an identical `404.html`; `_redirects` adds the host-supported catch-all rule. These are aliases/routing support for the same document, not more content pages. |
 
-Use actual links for navigation and buttons for actions. Keyboard focus has a 2px blue perimeter with a 3px offset; forced-colors mode uses the system Highlight color. Hover styling is gated to hover-capable pointers. There is no animation to disable for reduced motion. No icon-only financial actions are used.
+There are no forms, dialogs, loading indicators, wallet controls, application errors or transaction states. If automatic redirects are disabled, the anchor is the entire recovery path. Failures at the destination are handled by the browser and the destination itself.
 
 ## Reuse rules
 
-Use the ledger and its existing section row for another account or explanatory section. Keep the original serif voice and six-step type scale. A new financial value needs a real read, an explicit unit and a loading/error state. Keep expensive or irreversible consequences beside their action, before the wallet opens. Reuse native inputs and dialogs rather than adding a component framework. Keep full monetary values and addresses selectable and wrapping. Preserve the light page, one table and original logo; a new decorative card system, font, theme or animation would conflict with this site's direction.
+- Keep one canonical HTML source and regenerate the export with `node web/scripts/build.mjs`.
+- Keep the redirect directives in the head and the body limited to the one descriptive anchor.
+- Reuse the same generated document for old routes. Do not restore the former app, CSS, wallet SDK bundles or imagery.
+- Update both redirect directives, the link, the build rule and checks together if the requester changes the destination.
 
-Guidance attribution and full notices: `web/THIRD_PARTY.md` and `web/licenses/interface-guidance.txt`.
+Design guidance: Jakub Krehel's Better Interface, commit `267330e1adfc66a718fb65fa6918c1f06d0a689e` (MIT). Documentation method: Paul Bakaus's Impeccable, commit `9d715cc4f5564a990ca8345abfdd5df6dc9b41c8` (Apache-2.0). Existing full notices remain in `web/licenses/interface-guidance.txt`.

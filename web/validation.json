@@ -1,0 +1,101 @@
+{
+  "scope": "PERK immediate website redirect; launch 1660, chain 4663 contracts unchanged",
+  "destination": "https://perkshire-imdway-perk-on-robinho.sites.imd.fun/",
+  "export": {
+    "files": [
+      "dist/index.html",
+      "dist/404.html",
+      "dist/_redirects"
+    ],
+    "htmlBytes": 908,
+    "htmlSha256": "92d3bf1f0389e2f7eaa276b9fadcb99f69932dc7018f2f27036888df9362ad61",
+    "identicalSourceAndFallback": true,
+    "localRuntimeAssets": 0
+  },
+  "checks": {
+    "productionBuild": "passed",
+    "strictInlineTypecheck": "passed",
+    "lockedToolchainInstall": "passed",
+    "chromium": {
+      "passed": 7,
+      "results": [
+        "Minimal page, exact export copies, catch-all rule, no obsolete runtime assets",
+        "Inline script calls location.replace immediately with the exact destination",
+        "Preview serves the redirect for root, old anchors, queries, nested paths and removed assets",
+        "Chromium: unmodified production HTML redirects every tested old path to the exact URL",
+        "Chromium: zero-delay meta refresh works with JavaScript disabled, including 404 fallback",
+        "Chromium: script alone redirects; Back returns to the preceding page without a redirect loop",
+        "Chromium: fallback link, keyboard focus/Enter, 320/390/768/1440 reflow, 200% text and five applicable axe rules"
+      ]
+    },
+    "webkit": {
+      "status": "unperformed",
+      "launch": "failed: browser runtime dependencies unavailable"
+    },
+    "actualBrowserNavigation": {
+      "destinationReached": true,
+      "httpStatus": 200,
+      "consoleErrors": 0
+    },
+    "fallbackViewportWidths": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "textEnlargementPercent": 200,
+    "axe": {
+      "rules": [
+        "color-contrast",
+        "link-name",
+        "html-has-lang",
+        "document-title",
+        "meta-viewport"
+      ],
+      "violations": 0
+    },
+    "pinnedProbe": {
+      "actualExport": {
+        "passed": 14,
+        "total": 16,
+        "failures": [
+          "render",
+          "share"
+        ],
+        "note": "Automatic redirect leaves no original document to measure while offline; not a visual pass."
+      },
+      "fallbackFixture": {
+        "passed": 16,
+        "total": 16,
+        "note": "Test-only copy suppressing the two redirect directives, not the production export."
+      }
+    },
+    "metadataImage": {
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 1551638
+    }
+  },
+  "integrity": {
+    "unchangedProtectedProjectFiles": 142,
+    "ignoreFileChanged": false,
+    "dependencyManifestsChanged": false,
+    "lockfilesChanged": false,
+    "submodules": 0
+  },
+  "limitations": [
+    "WebKit interaction/rendering unperformed",
+    "No screen-reader, physical-device, native browser zoom or social-crawler test",
+    "Post-publication host must support the supplied catch-all rule or 404 document",
+    "Head-only metadata image depends on destination availability",
+    "Contract tests not rerun for unchanged Solidity"
+  ],
+  "packaging": {
+    "limitBytes": 8388608,
+    "candidateFiles": 159,
+    "filePayloadBytes": 1627157,
+    "tarUpperBoundBytes": 1750016,
+    "belowLimit": true,
+    "generatedDependenciesIncluded": false
+  }
+}

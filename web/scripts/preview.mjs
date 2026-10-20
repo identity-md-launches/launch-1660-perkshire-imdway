@@ -1,24 +1,27 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { join, resolve, extname } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { root } from './toolchain.mjs';
+
 export function preview(port = 0) {
-  const dist = join(root, 'dist');
-  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
   const server = createServer(async (req, res) => {
-    try {
-      const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-      if (path === '/') { res.writeHead(302, { Location: '/preview/' }); res.end(); return; }
-      if (!path.startsWith('/preview/')) throw new Error('not found');
-      const file = resolve(dist, path.slice('/preview/'.length) || 'index.html');
-      if (!file.startsWith(dist + '/')) throw new Error('not found');
-      const content = await readFile(file);
-      res.writeHead(200, { 'Content-Type': types[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(content);
-    } catch { res.writeHead(404); res.end('Not found'); }
+    const path = new URL(req.url, 'http://localhost').pathname;
+    const known = ['/', '/index.html', '/preview/', '/preview/index.html', '/404.html', '/preview/404.html'];
+    const rules = path === '/_redirects' || path === '/preview/_redirects';
+    const content = await readFile(join(root, 'dist', rules ? '_redirects' : known.includes(path) ? 'index.html' : '404.html'));
+    res.writeHead(known.includes(path) || rules ? 200 : 404, {
+      'Content-Type': rules ? 'text/plain; charset=utf-8' : 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store'
+    });
+    res.end(content);
   });
-  return new Promise(resolve => server.listen(port, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${server.address().port}/preview/` })));
+  return new Promise(resolve => server.listen(port, '127.0.0.1', () => resolve({
+    server, url: `http://127.0.0.1:${server.address().port}/preview/`
+  })));
 }
-if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const { url } = await preview(Number(process.env.PORT || 4173));
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const flag = process.argv.indexOf('--port');
+  const { url } = await preview(flag === -1 ? 4173 : Number(process.argv[flag + 1]));
   console.log(`Previewing production export at ${url}`);
 }

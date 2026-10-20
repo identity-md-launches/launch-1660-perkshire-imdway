@@ -1,56 +1,56 @@
 # Perkshire IMDway (PERK)
 
-The **perkshire** website is in `web/`; its finished static export is in **`dist/`**. It is a light-only, 1995-style HTML page with one table, native forms and a small browser application, without a UI framework. The launch-1660 Solidity contracts, Foundry configuration and existing dependencies are unchanged.
+The **perk** site is an immediate redirect to **https://perkshire-imdway-perk-on-robinho.sites.imd.fun/**. Its only HTML source is `web/index.html`. The head contains a zero-delay meta refresh and a synchronous `location.replace`; the body contains one plain fallback link. No former app, wallet code, styles, logos or local runtime assets remain in the export.
 
-## Install, rebuild and preview the website
+Launch 1660 on Robinhood Chain (4663) is unchanged. This change does not deploy or transact with any contract. The destination is the creator's supplied delegate-wallet site; verifying the delegation is outside this website change.
 
-Requires Node.js 22 or later and npm. To keep generated dependencies and caches outside this checkout:
+## Install, rebuild and preview
+
+Requires Node.js 22+ and npm. The production build itself uses only Node built-ins and needs no installation:
 
 ```sh
-mkdir -p /tmp/perkshire-tools
-cp web/package.json web/package-lock.json /tmp/perkshire-tools/
-npm ci --prefix /tmp/perkshire-tools --cache /tmp/perkshire-npm-cache
-PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/typecheck.mjs
-PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/build.mjs
+node web/scripts/build.mjs
 node web/scripts/preview.mjs
 ```
 
-Open **http://127.0.0.1:4173/preview/**. The preview serves the production export at a subpath; stop it with Ctrl-C. `PORT` can select another local port. `PERK_TOOLCHAIN` points to the directory containing the installed frontend package manifest. The equivalent npm scripts are in `web/package.json`.
+Open `http://127.0.0.1:4173/preview/` to exercise the actual redirect. Stop preview with Ctrl-C; `--port 4174` selects another port. Preview also returns the redirect document for unknown paths, with status 404.
 
-The build checks both pinned ABI hashes, fills the known contract links into `web/index.html`, bundles the wallet/read script, copies local assets, and renders the original `logo.svg` into `logo-512.png`. It replaces only `dist/`, the generated logo PNG and build reports. A normal frontend rebuild needs no RPC, secrets, requester account, Foundry build or removed `.imd/reads` inputs. The SDK is loaded on demand for Coinbase connections; no relay or WalletConnect project ID is used.
-
-Serve the contents of `dist/` on a static host. Asset paths are relative and navigation uses in-page anchors, so gateway subpaths work without server rewrites. The assignment's publisher handles pinning this export and naming it **perkshire** after handoff. No live hosting URL is claimed here. Do not submit dependency folders, caches, browser downloads or package archives. No ignore files were changed.
-
-## What the page does
-
-- Reads all balances, counters, token decimals, fee constants, weekly costs, timing and tender quotes from the live contracts. Reads the bound v4 pool through StateView; computes spot price and price-to-book with integer arithmetic at one block. Zero book value produces an undefined ratio; failed reads never become zero balances.
-- Verifies chain 4663, pinned deployed bytecode hashes, hook currencies and PoolManager before enabling transactions. Public RPCs are tried first, with a correctly connected wallet as a fallback.
-- Discovers named EIP-6963 wallets, supports legacy browser providers, offers mobile wallet-browser links and the locally bundled Coinbase Wallet/Smart Wallet SDK. Offers the pinned network add/switch parameters; updates on account/network changes.
-- Quotes before signing, approves the exact entered PERK amount, simulates transactions, estimates ETH gas and shows a review before opening the wallet. A changed tender quote requires another review. The contract itself has no minimum-payout protection.
-- Tracks receipts and reports actual tender/burn/redemption event amounts. Pending hashes survive reload; failed or replaced transaction tracking can be cleared explicitly, with a warning that this does not cancel the transaction.
-- Resolves the latest `Asked` event by its chain timestamp, including multiple blocks in one second. Maps the Intake request ID through `/intake/4663/:transactionHash` to the oracle UUID, then reads the exact `/oracle/requests/:id`. Other requests with the same question are not substituted.
-
-The constant fictional management/HQ, launch number and creator-allocation disclosures are supplied editorial copy, not cached financial readings. Current pool liquidity may be zero; a spot price is not a trade quote. The report service is an external dependency and its reported answer is not independently signature-verified by this page.
-
-## Website validation
+Install the existing locked development tools in disposable scratch space to run the checks:
 
 ```sh
-PLAYWRIGHT_BROWSERS_PATH=/tmp/perkshire-browsers /tmp/perkshire-tools/node_modules/.bin/playwright install chromium webkit
-PERK_TOOLCHAIN=/tmp/perkshire-tools PLAYWRIGHT_BROWSERS_PATH=/tmp/perkshire-browsers node web/scripts/check.mjs
+mkdir -p test/scratch/toolchain
+cp web/package.json web/package-lock.json test/scratch/toolchain/
+npm ci --prefix test/scratch/toolchain --cache test/scratch/npm-cache
+node web/scripts/typecheck.mjs --toolchain test/scratch/toolchain
+PLAYWRIGHT_BROWSERS_PATH=test/scratch/browsers node test/scratch/toolchain/node_modules/playwright/cli.js install chromium webkit
+PLAYWRIGHT_BROWSERS_PATH=test/scratch/browsers node web/scripts/check.mjs --toolchain test/scratch/toolchain
 ```
 
-On Linux, install Playwright's required OS browser libraries if they are absent. The check runs its own temporary server and closes it. RPC and wallet interactions are isolated fixtures: it never signs with a real account or spends funds. A missing browser is reported as unperformed and exits nonzero.
+The existing `web/package.json`, lockfile and TypeScript configuration are preserved. Their wallet dependencies are no longer imported or bundled. `--toolchain` accepts a directory containing the installed development packages; omit it when the packages are installed beside `web/package.json`. The preserved npm build, typecheck, check and preview scripts still invoke these same scripts. The typecheck uses TypeScript strict/checkJs/noEmit on the actual inline script and syntax-checks the Node scripts.
 
-Actual worker results: production build and strict typecheck passed; **26 grouped browser checks passed across Chromium and WebKit**; axe reported **zero violations** in both engines; the pinned taste@1 probe passed **16/16**. Live RPC reads and the real Coinbase onboarding popup were also inspected. No funded wallet, passkey registration or live transaction was used. See [VALIDATION.md](VALIDATION.md) for commands, findings, coverage, source locations and limitations, and [DESIGN.md](DESIGN.md) for the implemented design. Machine-readable results are in `web/validation/`; extra worker artifacts are in `artifacts/`.
+`check.mjs` starts and closes its own preview and intercepts external navigation. It tests the production HTML, script-only history behavior, JavaScript-disabled meta refresh, old paths and the fallback link. For fallback inspection only, its test response suppresses the two redirect directives without changing the link or metadata. It tests both Chromium and WebKit by default; `--engine chromium` or `--engine webkit` selects one. A missing requested browser fails the command.
 
-To repeat the optional source/deployment check with Foundry and curl installed:
+## Static export and old paths
 
-```sh
-forge build --out test/scratch/foundry-out --cache-path test/scratch/foundry-cache
-PERK_TOOLCHAIN=/tmp/perkshire-tools node web/scripts/verify-contracts.mjs
-```
+The build replaces `dist/` completely and produces only:
 
-This checks the ABI hashes and live deployed code against compiled source (masking constructor immutable slots), then verifies the browser's complete runtime-code pins. It does not deploy anything. Original contract documentation follows.
+- `index.html`: a byte-for-byte copy of the single source page.
+- `404.html`: an identical copy of that page for custom not-found handling.
+- `_redirects`: `/* https://perkshire-imdway-perk-on-robinho.sites.imd.fun/ 301` for hosts/gateways supporting this convention.
+
+The previous export had only one HTML page, so its section anchors and query URLs all enter the same redirect. The new destination is always the exact root URL above; old queries and fragments are discarded. The script replaces the history entry so Back does not return to the redirect.
+
+Serve the complete `dist/` contents. Unknown paths redirect when the host honors `_redirects` or serves `404.html` for missing paths. A host supporting neither must map all old paths to this index; static HTML alone cannot set an arbitrary server's routing policy. Deployment, gateway policy and live routing after publication were not exercised by this change.
+
+There are no local runtime asset URLs to break at a gateway subpath. The required head-only favicon and `og:image` reference the destination's existing `assets/investor-pepe.png` by absolute URL; that image is not included in the page body or copied into this export. It returned HTTP 200 as `image/png` during validation. Its future availability and social-crawler behavior are external dependencies.
+
+## Actual website validation
+
+Production build and strict inline-script typecheck passed. The locked toolchain was installed successfully. **Seven grouped checks passed in Chromium**, including real production navigation, meta-only navigation with JavaScript disabled, script-only replacement/history, old paths, keyboard Enter, reflow at 320/390/768/1440, 200% text enlargement, and five applicable axe rules with zero violations. The browser tool also followed the actual export to the supplied live URL and confirmed the 390px fallback and visible focus screenshots.
+
+WebKit was attempted but could not launch its runtime; its interaction and rendering checks remain unperformed. The pinned design probe on the redirecting export reported 14/16: automatic navigation leaves no original body or head to measure, so `render` and `share` failed. A separately identified test-only fallback fixture passed 16/16; that result is not a full-export probe pass.
+
+See [VALIDATION.md](VALIDATION.md) for commands, review coverage, findings and limitations, and [DESIGN.md](DESIGN.md) for the final source's deliberately absent styling system. Screenshots, browser downloads, dependency installations, caches and raw reports stay in disposable `test/scratch/`. No ignore-file changes, dependency archives, generated package trees or submodules are submitted. Original contract documentation follows; its historical contract test results were not rerun for this website-only change.
 
 ## Token and Retained Earnings Vault hook
 
